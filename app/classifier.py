@@ -126,6 +126,8 @@ def _build_agent() -> Agent[RouteDeps]:
         # `department` is typed to the enum, so pydantic-ai rejects any value outside the five
         # departments before this body runs — the model cannot invent a destination address.
         to_email = DEPARTMENT_EMAILS[department]
+        # Observable proof in the API logs that the model drove the send via a tool call.
+        logger.info("agent tool-call: send_email(department=%s) -> %s", department.value, to_email)
         await run_in_threadpool(
             send_to_department,
             department=department,
@@ -134,6 +136,7 @@ def _build_agent() -> Agent[RouteDeps]:
             message=ctx.deps.message,
         )
         ctx.deps.sent_department = department
+        logger.info("send_email delivered to %s (%s), reply-to=%s", department.value, to_email, ctx.deps.sender)
         return f"Wiadomość wysłana do działu {department.value} ({to_email})."
 
     return agent

@@ -13,7 +13,7 @@ services:
       ollama:
         condition: service_healthy
       mailhog:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   ollama:
@@ -35,6 +35,12 @@ services:
     image: mailhog/mailhog:latest
     ports:
       - "8025:8025"
+    healthcheck:
+      # MailHog image ships busybox wget; hit its HTTP API so the container reports (healthy).
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8025/api/v2/messages"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
 volumes:
