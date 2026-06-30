@@ -12,12 +12,14 @@ class TargetDepartment(str, Enum):
     INNE = "INNE"
 
 
+# Target addresses exactly as given in the task brief (the five-address list). The internal Enum labels
+# (KADRY/HR/HELPDESK/IT/INNE) map onto them; INNE is the brief's `other@` fallback.
 DEPARTMENT_EMAILS: dict[TargetDepartment, str] = {
-    TargetDepartment.KADRY: "kadry@firma.pl",
-    TargetDepartment.HR: "hr@firma.pl",
-    TargetDepartment.HELPDESK: "helpdesk@firma.pl",
-    TargetDepartment.IT: "it@firma.pl",
-    TargetDepartment.INNE: "kontakt@firma.pl",
+    TargetDepartment.KADRY: "kadry@example.com",
+    TargetDepartment.HR: "human-resources@example.com",
+    TargetDepartment.HELPDESK: "help-desk@example.com",
+    TargetDepartment.IT: "it@example.com",
+    TargetDepartment.INNE: "other@example.com",
 }
 
 

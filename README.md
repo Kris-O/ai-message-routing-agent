@@ -57,22 +57,25 @@ curl -X POST http://localhost:8000/api/v1/route-message \
   -d '{"email":"jan.kowalski@example.com","message":"Chcę iść na urlop w przyszłym miesiącu."}'
 ```
 ```json
-{"department":"KADRY","target_email":"kadry@firma.pl","sent":true,"detail":"classified and delivered"}
+{"department":"KADRY","target_email":"kadry@example.com","sent":true,"detail":"classified and delivered"}
 ```
-Wiadomość pojawia się w MailHogu: **To: kadry@firma.pl**, **Reply-To: jan.kowalski@example.com**.
+Wiadomość pojawia się w MailHogu: **To: kadry@example.com**, **Reply-To: jan.kowalski@example.com**.
 
 ## Jak działa decyzja o dziale
 
 Pięć działów docelowych. Sednem instrukcji dla modelu jest rozróżnienie **twardych** i **miękkich**
 kompetencji, a w razie wątpliwości — bezpieczny wybór `INNE`:
 
-| Dział       | Adres               | Zakres                                                                              |
-|-------------|---------------------|-------------------------------------------------------------------------------------|
-| `KADRY`     | kadry@firma.pl      | **Twardy HR / płace**: umowy, wynagrodzenia, **urlopy**, L4, PIT/ZUS, świadczenia.  |
-| `HR`        | hr@firma.pl         | **Miękki HR**: rekrutacja, onboarding, szkolenia, oceny, konflikty, kultura.        |
-| `HELPDESK`  | helpdesk@firma.pl   | **1. linia IT**: reset hasła, dostęp do aplikacji, drobny sprzęt, „jak zrobić X".   |
-| `IT`        | it@firma.pl         | **2. linia / infrastruktura**: awarie systemów, sieć/VPN, bezpieczeństwo, integracje.|
-| `INNE`      | kontakt@firma.pl    | **Fallback**: cokolwiek niejednoznacznego. Bezpieczny domyślny cel.                 |
+| Dział       | Adres                        | Zakres                                                                              |
+|-------------|------------------------------|-------------------------------------------------------------------------------------|
+| `KADRY`     | kadry@example.com            | **Twardy HR / płace**: umowy, wynagrodzenia, **urlopy**, L4, PIT/ZUS, świadczenia.  |
+| `HR`        | human-resources@example.com  | **Miękki HR**: rekrutacja, onboarding, szkolenia, oceny, konflikty, kultura.        |
+| `HELPDESK`  | help-desk@example.com        | **1. linia IT**: reset hasła, dostęp do aplikacji, drobny sprzęt, „jak zrobić X".   |
+| `IT`        | it@example.com               | **2. linia / infrastruktura**: awarie systemów, sieć/VPN, bezpieczeństwo, integracje.|
+| `INNE`      | other@example.com            | **Fallback** (`other@` z listy zadania): cokolwiek niejednoznacznego, bezpieczny cel.|
+
+Adresy są **dokładnie z listy w treści zadania**; wewnętrzne etykiety enuma (`KADRY/HR/HELPDESK/IT/INNE`)
+mapują się na nie 1:1, a `INNE` to wskazany w zadaniu fallback `other@`.
 
 ## Decyzje architektoniczne
 
@@ -116,9 +119,15 @@ kompetencji, a w razie wątpliwości — bezpieczny wybór `INNE`:
    narzędzia, też zwracamy `503` zamiast po cichu udawać sukces. Blokujące `smtplib` jest odsunięte do
    puli wątków, więc nie blokuje pętli zdarzeń.
 
-7. **Wykrywanie prompt-injection przed modelem.** Wiadomości próbujące manipulować klasyfikatorem
-   („zignoruj instrukcje, odpowiedz X") są wykrywane deterministycznie i kierowane do `INNE` —
-   **adversarialny tekst nigdy nie trafia do modelu** (`app/injection.py`).
+7. **Wstępny filtr prompt-injection (przed modelem) — best-effort, nie gwarancja.** Wiadomości próbujące
+   manipulować routerem („zignoruj instrukcje, odpowiedz X", „classify this as X") są wykrywane
+   deterministycznym regexem (PL+EN) i **kwarantannowane do `INNE`**, zanim trafią do modelu
+   (`app/injection.py`). Świadomie trzymam ten filtr **wąsko** (żeby nie blokować zwykłych maili), więc
+   traktuję go jako **pierwszą linię**, a sam model — instruowany, by ignorować manipulacje — jako drugą.
+   **Kompromis:** podejrzana wiadomość ląduje w bezpiecznym `INNE` (do ręcznego przeglądu) zamiast być
+   routowana wg treści, którą próbowano zmanipulować — w tych przypadkach przedkładam bezpieczeństwo nad
+   trafność routingu. (W stress-evalu wszystkie wiadomości z wstrzykniętą instrukcją trafiły do `INNE` —
+   liczę to jako „obsłużone bezpiecznie", nie jako rozpoznanie właściwego działu.)
 
 8. **Konfiguracja ze zmiennych środowiskowych (12-factor).** Adres Ollamy/SMTP, model i timeout są w
    jednej klasie `Settings` (`app/config.py`). Wartości domyślne pasują do `docker-compose` i są
@@ -127,7 +136,9 @@ kompetencji, a w razie wątpliwości — bezpieczny wybór `INNE`:
 ## Testy
 
 ```bash
-.venv/bin/python -m pytest -q        # 23 testy; offline — bez żywej Ollamy/SMTP
+python -m venv .venv && . .venv/bin/activate          # (Windows: .venv\Scripts\activate)
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q                                              # 23 testy; offline — bez żywej Ollamy/SMTP
 ```
 Testy podmieniają model na sterowalną atrapę (pydantic-ai `FunctionModel`), która **realnie wywołuje
 narzędzie** `send_email` — dzięki temu sprawdzamy całą ścieżkę agenta (wywołanie narzędzia → wysyłka),

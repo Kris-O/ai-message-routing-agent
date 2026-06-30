@@ -1,0 +1,5 @@
+# Test-only dependencies. Install alongside the runtime deps to run the suite:
+#   pip install -r requirements.txt -r requirements-dev.txt
+#   pytest -q
+pytest==9.1.1
+anyio==4.14.0

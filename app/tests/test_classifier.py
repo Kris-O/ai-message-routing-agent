@@ -35,7 +35,7 @@ async def test_tool_call_routes_and_delivers(delivered, tool_calling_model) -> N
     assert len(delivered) == 1
     assert delivered[0]["department"] == TargetDepartment.KADRY
     assert delivered[0]["sender"] == "jan@firma.pl"
-    assert delivered[0]["to_email"] == "kadry@firma.pl"
+    assert delivered[0]["to_email"] == "kadry@example.com"
 
 
 async def test_off_enum_tool_arg_never_delivers_and_raises(delivered, tool_calling_model) -> None:
@@ -69,7 +69,7 @@ async def test_injection_short_circuits_to_inne_without_model(delivered, explodi
     assert department == TargetDepartment.INNE
     assert len(delivered) == 1
     assert delivered[0]["department"] == TargetDepartment.INNE
-    assert delivered[0]["to_email"] == "kontakt@firma.pl"
+    assert delivered[0]["to_email"] == "other@example.com"
 
 
 async def test_upstream_httpx_failure_maps_to_classifier_error(monkeypatch) -> None:

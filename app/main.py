@@ -23,7 +23,10 @@ async def lifespan(app: FastAPI):
     # Warm the model in the background so startup/health isn't blocked by the cold model load.
     warmup_task = asyncio.create_task(warmup())
     yield
+    # Cancel and await the warmup before closing the shared client, so a shutdown mid-warmup doesn't
+    # yank the HTTP client out from under an in-flight request.
     warmup_task.cancel()
+    await asyncio.gather(warmup_task, return_exceptions=True)
     await close_classifier()  # release the agent's HTTP client on shutdown
 
 

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_starttls: bool = False
-    mail_from: str = "router@firma.pl"
+    mail_from: str = "router@example.com"
     rate_limit: str = "300/minute"
     rate_limit_enabled: bool = True
 

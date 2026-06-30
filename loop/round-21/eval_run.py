@@ -1,4 +1,4 @@
-"""Round 12 — BRUTAL stress eval of the classifier.
+"""Round 21 — stress eval of the tool-calling routing agent.
 
 Goal (Kris): forget the polite "urlop" case run in circles. Throw a LARGE volume of deliberately
 SLOPPY, messy real-world mail at every department at once: no punctuation, ALL CAPS rage, chat-speak,
@@ -9,8 +9,9 @@ Grading is honest but fair:
   * accept-set  = `accept` if present else [`expected`]   (only genuine boundary cases get a set)
   * a run is CORRECT iff its label is in the accept-set AND not equal to `must_not`
   * LEAK        = run label == `must_not` (an injection succeeded / a hard miss we flag separately)
-Runs in-process against app.classifier.classify (same code path the API uses: injection guard + LLM
-+ tolerant label parser). CPU model — first call loads the model (~10-20s), rest are fast.
+Runs against the LIVE HTTP endpoint (POST /api/v1/route-message) — the same path a reviewer uses: the
+agent reads each message and delivers it via the send_email tool call; we grade the returned department.
+The model loads on the first call (slow on CPU), subsequent calls reuse the cached system-prompt prefix.
 """
 import asyncio
 import json
@@ -190,7 +191,7 @@ def _analyze(out, base):
             misses.append((c["id"], c["expected"], c.get("accept"), c.get("must_not"), labels))
 
     print("\n" + "=" * 72)
-    print(f"ROUND 12 STRESS SCORECARD   cases={len(out)}  runs/case={RUNS}  total_calls={run_total}")
+    print(f"ROUND 21 STRESS SCORECARD   cases={len(out)}  runs/case={RUNS}  total_calls={run_total}")
     print("=" * 72)
     print(f"run-level accuracy : {run_correct}/{run_total} = {run_correct/run_total:.1%}")
     print(f"case-level (majority): {case_correct}/{len(out)} = {case_correct/len(out):.1%}")

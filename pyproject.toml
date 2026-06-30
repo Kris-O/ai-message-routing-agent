@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+# Tests are async and run through the anyio pytest plugin (shipped with the `anyio` package,
+# default backend = asyncio). Registering the marker keeps pytest from warning about it.
+markers = [
+    "anyio: run async test on the anyio plugin (asyncio backend)",
+]

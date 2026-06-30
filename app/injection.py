@@ -17,6 +17,8 @@ _INJECTION_PATTERNS = [
     r"\binstrukcj\w*\b.{0,30}\b(klasyfikator\w*|model\w*|asystent\w*|system\w*)",
     # imperative "pick/assign <LABEL>" — a directive to choose a specific department
     r"\b(wybierz|wska[żz]|zaklasyfikuj|sklasyfikuj)\b.{0,30}\b(KADRY|HR|HELPDESK|IT|INNE)\b",
+    # English equivalent: "classify/route/assign … as/to <LABEL>"
+    r"\b(classif\w*|categori[sz]\w*|route|assign|tag|label|mark|set)\b.{0,30}\b(KADRY|HR|HELPDESK|IT|INNE)\b",
 ]
 _RX = [re.compile(p, re.IGNORECASE | re.DOTALL) for p in _INJECTION_PATTERNS]
 
