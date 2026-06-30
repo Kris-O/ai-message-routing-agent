@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
@@ -16,6 +17,12 @@ from app.models import DEPARTMENT_EMAILS, RouteRequest, RouteResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+
+
+# Surface our own INFO logs (e.g. the send_email tool call) in container output, while keeping noisy
+# third-party libraries at WARNING. Lets a reviewer see the agent's tool call in `docker logs`.
+logging.basicConfig(level=logging.WARNING)
+logging.getLogger("app").setLevel(logging.INFO)
 
 
 @asynccontextmanager
