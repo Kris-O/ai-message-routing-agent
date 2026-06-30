@@ -1,0 +1,7 @@
+# Opt-in GPU override. Run with:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+# Requires an NVIDIA GPU + nvidia-container-toolkit. The base compose stays CPU-only so the stack
+# still starts on a machine without a GPU (just slower).
+services:
+  ollama:
+    gpus: all
