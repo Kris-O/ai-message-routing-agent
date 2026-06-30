@@ -203,12 +203,20 @@ docker/ollama-entrypoint.sh  # pobiera model przed gotowością kontenera
 3. **Trwałość dostawy.** Gdy klasyfikacja się powiedzie, ale SMTP padnie → `503`, a wiadomość przepada
    (brak dead-letter/retry/persystencji). *Produkcyjnie:* kolejka wychodząca z ponawianiem + dead-letter.
 
-4. **Walidacja i nadużycia.** Wejście ma limit długości (`max_length=4000` → `422`) chroniący przed
+4. **Pętle pocztowe i auto-odpowiedzi.** Architektura jest jednokierunkowa: HTTP-wejście → **jeden** mail
+   SMTP, aplikacja **nie konsumuje** skrzynki, więc auto-forward działu (np. IT na urlopie przekierowuje na
+   główną) **nie wraca** na wejście — pętla nie zamyka się w tym PoC. Profilaktycznie maile wychodzące mają
+   `Auto-Submitted: auto-generated` (RFC 3834 — poprawny autoreply „jestem na urlopie" ich nie odbija) oraz
+   `X-Loop` z tożsamością routera. *Produkcyjnie* (gdy dojdzie intake mailowy zasilający endpoint): odrzucać
+   wiadomości z własnym `X-Loop`, odrzucać nadawcę będącego adresem działu/routera, liczyć nagłówki
+   `Received` (max-hops) i dedup per-nadawca; obecny rate-limit (`300/min`) to zgrubny bezpiecznik na storm.
+
+5. **Walidacja i nadużycia.** Wejście ma limit długości (`max_length=4000` → `422`) chroniący przed
    zalaniem kontekstu modelu; endpoint ma rate-limiting (slowapi, domyślnie `300/min`). Brak
    **uwierzytelniania** endpointu — poza zakresem PoC.
 
-5. **Zakres językowy.** Instrukcja jest polskocentryczna (obsługuje PL + wtrącenia EN); inne języki są
+6. **Zakres językowy.** Instrukcja jest polskocentryczna (obsługuje PL + wtrącenia EN); inne języki są
    nieprzewidziane — świadomy zakres dla polskiej firmy.
 
-6. **Dostawa testowa.** MailHog to skrzynka testowa — nic nie wychodzi na zewnątrz. Produkcyjnie wystarczy
+7. **Dostawa testowa.** MailHog to skrzynka testowa — nic nie wychodzi na zewnątrz. Produkcyjnie wystarczy
    podmienić `SMTP_*` (z opcjonalnym STARTTLS/login, już wspieranym przez config).

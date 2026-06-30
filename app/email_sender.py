@@ -23,6 +23,12 @@ def send_to_department(
     email["To"] = to_email
     email["Reply-To"] = sender
     email["Subject"] = f"[routing] Nowa wiadomość do działu {department.value}"
+    # Loop / auto-reply prevention. RFC 3834: a well-behaved auto-responder (np. „jestem na urlopie")
+    # nie odpowiada na wiadomość oznaczoną jako auto-generated — to ucina pętlę z urlopowym autoreply.
+    # X-Loop niesie tożsamość nadawcy-routera: gdy w produkcji dojdzie intake mailowy, wiadomość z tym
+    # nagłówkiem należy odrzucić (hop-guard) zamiast routować ją ponownie.
+    email["Auto-Submitted"] = "auto-generated"
+    email["X-Loop"] = settings.mail_from
     email.set_content(message)
 
     try:

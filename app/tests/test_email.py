@@ -71,6 +71,9 @@ async def test_message_is_delivered_to_department_with_reply_to(
     assert message["To"] == DEPARTMENT_EMAILS[TargetDepartment.KADRY]
     assert message["Reply-To"] == "jan@firma.pl"
     assert TargetDepartment.KADRY.value in message["Subject"]
+    # loop / auto-reply prevention headers (RFC 3834 + X-Loop)
+    assert message["Auto-Submitted"] == "auto-generated"
+    assert message["X-Loop"] == get_settings().mail_from
     assert _CapturingSMTP.last_instance is not None
     assert _CapturingSMTP.last_instance.starttls_calls == 0
     assert _CapturingSMTP.last_instance.login_calls == []
